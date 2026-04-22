@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <meta name="referrer" content="no-referrer"/>
+  <meta name="format-detection" content="telephone=no,email=no"/>
+  <title>62群专属 · 淘金币助力口令分享</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    body{font-family:-apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, sans-serif;
+        padding: 15px;max-width: 750px;margin: 0 auto;background: #f5f5f5;}
+    /* 专属标识头部 */
+    .header{background: #ff6700;color: #fff;text-align: center;padding: 12px;border-radius: 12px;margin-bottom: 15px;}
+    .header h2{font-size: 18px;font-weight: 600;}
+    .header p{font-size: 12px;margin-top: 4px;opacity: 0.9;}
+    .box{background: #fff;border-radius: 16px;padding: 20px;margin-bottom: 15px;box-shadow: 0 2px 10px rgba(0,0,0,0.06);}
+    .input-wrap{margin-bottom: 12px;}
+    #linkInput{width: 100%;padding: 15px;border: 1px solid #e5e5e5;border-radius: 10px;
+              font-size: 15px;margin-bottom: 12px;outline: none;resize: none;height: 100px;}
+    #linkInput:focus{border-color: #ff6700;}
+    .submit-btn{width: 100%;padding: 16px;background: #ff6700;color: #fff;border: none;
+               border-radius: 10px;font-size: 16px;font-weight: 500;cursor: pointer;}
+    .submit-btn:active{background: #e65c00;}
+    .item{display: flex;flex-direction: column;padding: 15px;border-bottom: 1px solid #f0f0f0;}
+    .item:last-child{border-bottom: none;}
+    .link-text{font-size: 14px;color: #333;line-height: 1.5;margin-bottom: 8px;
+              word-break: break-all;}
+    .item-footer{display: flex;justify-content: space-between;align-items: center;}
+    .time{font-size: 12px;color: #999;}
+    .copy-btn{padding: 8px 15px;background: #f8f8f8;border-radius: 8px;color: #ff6700;
+             font-size: 13px;cursor: pointer;}
+    .copy-btn:active{background: #f0f0f0;}
+    .tip{text-align: center;font-size: 12px;color: #999;margin-top: 10px;}
+    .empty-tip{text-align: center;font-size: 14px;color: #999;padding: 40px 0;}
+  </style>
+</head>
+<body>
+  <!-- 62群专属标识 -->
+  <div class="header">
+    <h2>62群专属 · 淘金币助力口令</h2>
+    <p>每日0点自动清空，放心分享</p>
+  </div>
+
+  <div class="box">
+    <div class="input-wrap">
+      <textarea id="linkInput" placeholder="粘贴你的淘金币助力口令/链接"></textarea>
+    </div>
+    <button class="submit-btn" onclick="submitLink()">提交分享</button>
+    <div class="tip">提交后自动显示，点击复制即可使用</div>
+  </div>
+
+  <div id="listBox" class="box"></div>
+
+  <script>
+    // 格式化时间：YYYY-MM-DD HH:MM:SS
+    function formatTime(date) {
+      const y = date.getFullYear()
+      const m = (date.getMonth()+1).toString().padStart(2, '0')
+      const d = date.getDate().toString().padStart(2, '0')
+      const h = date.getHours().toString().padStart(2, '0')
+      const min = date.getMinutes().toString().padStart(2, '0')
+      const s = date.getSeconds().toString().padStart(2, '0')
+      return `${y}-${m}-${d} ${h}:${min}:${s}`
+    }
+
+    // 每日0点自动清空核心逻辑
+    function checkAndClear() {
+      const today = new Date().toDateString()
+      const lastClearDay = localStorage.getItem('62group_lastClearDay')
+      // 日期不同则清空
+      if (today !== lastClearDay) {
+        localStorage.setItem('62group_linkList', '[]')
+        localStorage.setItem('62group_lastClearDay', today)
+      }
+    }
+
+    // 微信兼容的复制功能
+    function copyText(text) {
+      const textarea = document.createElement('textarea')
+      textarea.value = text
+      textarea.style.position = 'fixed'
+      textarea.style.left = '-9999px'
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+      alert('复制成功！')
+    }
+
+    // 渲染口令列表
+    function renderList() {
+      checkAndClear()
+      const list = JSON.parse(localStorage.getItem('62group_linkList') || '[]')
+      const box = document.getElementById('listBox')
+      
+      if (list.length === 0) {
+        box.innerHTML = '<div class="empty-tip">暂无分享的口令，快来当第一个吧~</div>'
+        return
+      }
+
+      box.innerHTML = ''
+      list.forEach(item => {
+        const div = document.createElement('div')
+        div.className = 'item'
+        div.innerHTML = `
+          <div class="link-text">${item.link}</div>
+          <div class="item-footer">
+            <span class="time">${item.time}</span>
+            <span class="copy-btn" onclick="copyText('${item.link.replace(/'/g, "\\'")}')">一键复制</span>
+          </div>
+        `
+        box.appendChild(div)
+      })
+    }
+
+    // 提交口令
+    function submitLink() {
+      const input = document.getElementById('linkInput')
+      const val = input.value.trim()
+      if (!val) {
+        alert('请输入淘金币助力口令/链接！')
+        return
+      }
+      
+      const list = JSON.parse(localStorage.getItem('62group_linkList') || '[]')
+      // 存储口令+提交时间
+      list.push({
+        link: val,
+        time: formatTime(new Date())
+      })
+      localStorage.setItem('62group_linkList', JSON.stringify(list))
+      input.value = '' // 清空输入框
+      renderList() // 刷新列表
+    }
+
+    // 页面加载时渲染
+    window.onload = function() {
+      renderList()
+    }
+  </script>
+</body>
+</html>
